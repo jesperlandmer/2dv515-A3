@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  proxy:
+    image: clust_proxy
+    restart: unless-stopped
+    build:
+        context: ./nginx/
+        args:
+            CONFIG_FILE: 'nginx.conf'
+    networks:
+        - clustnet
+    depends_on:
+        - rest
+        - frontend
+    ports:
+        - '8000:80'
+
+  rest:
+    image: clust_rest
+    restart: unless-stopped
+    build:
+      context: ./server/
+    networks:
+      - clustnet
+    volumes:
+      - ./frontend/:/app/
+      - server:/code/
+    
+  frontend:
+    image: clust_frontend
+    restart: unless-stopped
+    build:
+      context: ./frontend/
+    networks:
+      - clustnet
+    depends_on:
+      - rest
+    volumes:
+      - ./frontend/:/app/
+      - node_modules_frontend:/app/node_modules
+
+volumes:
+  server:
+  node_modules_frontend:
+
+networks:
+  clustnet:
+    driver: bridge
