@@ -1,8 +1,11 @@
+import operator
+
 from db import db
 
 class score:
-    def __init__(self, page=None, score=0.0, content=[], location=[]):
+    def __init__(self, page=None, score=0.0, content={}, location={}):
         self.page = page
+        self.score = score
         self.content = content
         self.location = location
 
@@ -12,23 +15,35 @@ class searchEngine:
 
     def searchQuery(self, query):
         result = {}
-        totscore = score(content=[], location=[])
+        totscore = score(content={}, location={})
         pages = self.db.getPages()
 
-        for i in range(len(pages)):
-            p = pages[i]
-            totscore.content[i] = self.db.getFrequencyScore(p, query)
-            totscore.location[i] = self.db.getFrequencyScore(p, query)
+        for link in pages:
+            p = pages[link]
+            id = self.getIdForWord(query)
+
+            if id in p.wordlocations:
+                totscore.content[p.link] = self.db.getFrequencyScore(p, id)
+                totscore.location[p.link] = self.db.getLocationScore(p, id) + 1
+            else: 
+                totscore.content[p.link] = 0
+                totscore.location[p.link] = 100000
 
         self.normalizeScore(totscore.content, False)
         self.normalizeScore(totscore.location, True)
 
-        for i in range(len(pages)):
-            p = pages[i]
-            calcScore = 1.0 * totscore.content[i] + 0.5 * totscore.location[i]
+        for link in pages:
+            p = pages[link]
+            calcScore = 1.0 * totscore.content[p.link] + 0.5 * totscore.location[p.link]
             result[p.link] = score(page=p, score=calcScore)
 
-
+        # Sort list from top down highest score
+        sortedList = []
+        for page in (sorted(result.values(), key=operator.attrgetter('score'), reverse=True)):
+            sortedList.append(page)
+            
+        # Return top 5
+        return sortedList[:5]
 
 
     def getIdForWord(self, word):
@@ -43,11 +58,14 @@ class searchEngine:
 
     def normalizeScore(self, scores, smallIsBetter):
         if smallIsBetter:
-            vmin = min(scores)
-            for i in range(len(scores)):
-                scores[i] = vmin / max(scores, 0.00001)
+            vmin = min(scores.values())
+            for key in scores:
+                score = scores[key]
+                scores[key] = float(vmin) / max(score, 0.00001)
         else:
-            vmax = max(scores)
-            for i in range(len(scores)):
-                scores[i] = scores[i] / max
+            vmax = max(scores.values())
+            for key in scores:
+                score = scores[key]
+                scores[key] = score / vmax
 
+# print(searchEngine().searchQuery('nintendo'))

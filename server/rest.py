@@ -4,14 +4,19 @@ from flask_restful import Resource, Api
 from json import dumps
 from flask_jsonpify import jsonify
 
+from db import db
+from searchEngine import searchEngine
+
 app = Flask(__name__)
 api = Api(app)
+db = db()
+searchEngine = searchEngine(db=db)
 
 class SearchEngine(Resource):
-    def post(self, body):
-        result = body
+    def get(self, body):
+        query = request.args.get('query')
+        result = searchEngine.searchQuery(query)
         return jsonify(result)
-        
 
 api.add_resource(SearchEngine, '/api/searchengine') # Route_1
 

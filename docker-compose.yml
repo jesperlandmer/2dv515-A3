@@ -2,40 +2,40 @@ version: '3'
 
 services:
   proxy:
-    image: clust_proxy
+    image: search_proxy
     restart: unless-stopped
     build:
         context: ./nginx/
         args:
             CONFIG_FILE: 'nginx.conf'
     networks:
-        - clustnet
+        - searchnet
     depends_on:
-        - rest
+        # - rest
         - frontend
     ports:
         - '8000:80'
 
   rest:
-    image: clust_rest
+    image: search_rest
     restart: unless-stopped
     build:
       context: ./server/
     networks:
-      - clustnet
+      - searchnet
     volumes:
       - ./frontend/:/app/
       - server:/code/
     
   frontend:
-    image: clust_frontend
+    image: search_frontend
     restart: unless-stopped
     build:
       context: ./frontend/
     networks:
-      - clustnet
-    depends_on:
-      - rest
+      - searchnet
+    # depends_on:
+    #   - rest
     volumes:
       - ./frontend/:/app/
       - node_modules_frontend:/app/node_modules
@@ -45,5 +45,5 @@ volumes:
   node_modules_frontend:
 
 networks:
-  clustnet:
+  searchnet:
     driver: bridge
