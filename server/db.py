@@ -1,5 +1,7 @@
 import sqlite3
 
+# TODO: Right now used for adding pagerank
+# Do I really need it?
 class page:
     def __init__(self, link, links=[], wordlocations={}, pageRank=1.0):
         self.link = link
@@ -30,6 +32,8 @@ class db:
         result = self.cursor.fetchone()
         return result
 
+    # Slow and unnecessary method for getting pages
+    # TODO: Use the returned tuples instead in getPageLinks
     def getPages(self):
         result = {}
         self.cursor.execute('SELECT * FROM concat_values;')
@@ -46,15 +50,42 @@ class db:
             p.wordlocations[row[1]] = [int(x) for x in row[2].split(',')]
         return result
 
-    def getFrequencyScore(self, page, wordid):
-        self.cursor.execute('SELECT count(*) FROM wordlocation where url = ? AND wordid = ?', (page.link,wordid))
-        result = self.cursor.fetchone()
-        return result[0]
+    def getPageLinks(self):
+        self.cursor.execute('SELECT * FROM pages;')
+        result = self.cursor.fetchall()
+        return result
 
-    def getLocationScore(self, page, wordid):
-        self.cursor.execute('SELECT MIN(location) FROM wordlocation where url = ? AND wordid = ?', (page.link,wordid))
-        result = self.cursor.fetchone()
-        return result[0]
+    def getFrequencyScore(self, wordids):
+        frequencyscores = []
+        c = self.cursor
+
+        for w in wordids:
+            c.execute('CREATE TEMPORARY TABLE frequency_score AS SELECT url, COUNT(*) ' +
+            'AS frequency FROM wordlocation WHERE wordid = ? GROUP BY url ' +
+            'UNION SELECT url, 0 AS frequency FROM wordlocation WHERE url '
+            'NOT IN (SELECT DISTINCT url FROM wordlocation WHERE wordid = ?) GROUP BY url;', (w,w))
+            c.execute('SELECT * FROM frequency_score')
+            frequencyscores.append(dict(c.fetchall()))
+            c.execute('DROP TABLE frequency_score')
+
+        merged = combineDicts(frequencyscores)
+        return merged
+
+    def getLocationScore(self, wordids):
+        locationscores = []
+        c = self.cursor
+
+        for w in wordids:
+            c.execute('CREATE TEMPORARY TABLE location_score AS SELECT url, MIN(location) ' +
+            'AS minlocation FROM wordlocation WHERE wordid = ? GROUP BY url ' +
+            'UNION SELECT url, 100000 AS minlocation FROM wordlocation ' +
+            'WHERE url NOT IN (SELECT DISTINCT url FROM wordlocation WHERE wordid = ?) GROUP BY url;', (w,w))
+            c.execute('SELECT * FROM location_score')
+            locationscores.append(dict(c.fetchall()))
+            c.execute('DROP TABLE location_score')
+
+        merged = mergeLocations(locationscores)
+        return merged
 
     def updatePageRank(self, page):
         self.cursor.execute('UPDATE pages SET pr_score = ? WHERE url = ?', (page.pageRank,page.link))
@@ -75,3 +106,30 @@ class db:
 
     def closeDb(self):
         self.conn.close()
+
+# Getting the min values
+def mergeLocations(dicts):
+    temp = {}
+    for d in dicts:
+        if not temp:
+            temp = d
+        else:
+            for v in d:
+                if (temp[v] > d[v]):
+                    temp[v] = d[v]
+
+    # Add +1 to score to avoid zero
+    for i in temp:
+        temp[i] += 1
+    return temp
+
+# Combining the scores
+def combineDicts(dicts):
+    temp = {}
+    for d in dicts:
+        if not temp:
+            temp = d
+        else:
+            for v in d:
+                temp[v] += d[v]
+    return temp

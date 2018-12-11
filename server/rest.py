@@ -25,8 +25,8 @@ def index():
     query = request.args.get('query')
     db = get_db()
     db.start()
-    result,totscore = searchEngine(db=db).searchQuery(query)
-    response = jsonify(getTopFive(result,totscore))
+    result = searchEngine(db=db).searchQuery(query)
+    response = jsonify(getTopFive(result))
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
@@ -34,5 +34,5 @@ def index():
 
 
 if __name__ == '__main__':
-     app.run(debug=True, port=5002)
+     app.run(debug=False, port=5002)
     #  app.run(debug=True, host='0.0.0.0', port=5002)

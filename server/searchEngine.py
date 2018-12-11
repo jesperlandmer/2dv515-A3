@@ -3,8 +3,8 @@ import operator
 from db import db
 
 class score:
-    def __init__(self, page=None, score=0.0, content={}, location={}, pageRank={}):
-        self.page = page
+    def __init__(self, link=None, score=0.0, content={}, location={}, pageRank={}):
+        self.link = link
         self.score = score
         self.content = content
         self.location = location
@@ -15,27 +15,41 @@ class searchEngine:
         self.db = db
 
     def searchQuery(self, query):
+        query = query.lower()
+        words = query.split(' ')
+        wordIds = [self.getIdForWord(w) for w in words]
         result = {}
         totscore = score(content={}, location={}, pageRank={})
-        pages = self.db.getPages()
-        id = self.getIdForWord(query)
 
-        [self.setScores(totscore, pages[p], id) for p in pages]
+        totscore.content = self.db.getFrequencyScore(wordIds)
+        totscore.location = self.db.getLocationScore(wordIds)
+        totscore.pageRank = dict(self.db.getPageLinks())
+        con1 = totscore.content['/wiki/Charles_Babbage']
+        loc1 = totscore.location['/wiki/Charles_Babbage']
+        pag1 = totscore.pageRank['/wiki/Charles_Babbage']
 
         self.normalizeScore(totscore.content, False)
         self.normalizeScore(totscore.location, True)
         self.normalizeScore(totscore.pageRank, False)
 
-        for p in pages.values():
-            calcScore = totscore.content[p.link] + (0.8 * totscore.location[p.link]) + (0.5 * totscore.pageRank[p.link])
-            result[p.link] = score(page=p, score=calcScore)
+        con2 = totscore.content['/wiki/Charles_Babbage']
+        loc2 = totscore.location['/wiki/Charles_Babbage']
+        pag2 = totscore.pageRank['/wiki/Charles_Babbage']
+
+        for link in totscore.content:
+            calcScore = totscore.content[link] + (0.8 * totscore.location[link]) + (0.5 * totscore.pageRank[link])
+            result[link] = score(link=link,
+                                 score=calcScore,
+                                 content=totscore.content[link],
+                                 location=0.8*totscore.location[link],
+                                 pageRank=0.5*totscore.pageRank[link])
 
         # Sort list from top down highest score
         sortedList = []
         for page in (sorted(result.values(), key=operator.attrgetter('score'), reverse=True)):
             sortedList.append(page)
 
-        return sortedList, totscore
+        return sortedList
 
     def getIdForWord(self, word):
         wordid = self.db.getWordId(word)
@@ -47,41 +61,31 @@ class searchEngine:
             self.db.saveWord(wordid, word)
             return wordid
 
-
-    def setScores(self, totscore, p, id):
-        if id in p.wordlocations:
-            totscore.content[p.link] = self.db.getFrequencyScore(p, id)
-            totscore.location[p.link] = self.db.getLocationScore(p, id) + 1
-        else: 
-            totscore.content[p.link] = 0
-            totscore.location[p.link] = 100000
-        totscore.pageRank[p.link] = p.pageRank
-
     def normalizeScore(self, scores, smallIsBetter):
+        vsmall = 0.00001
         if smallIsBetter:
-            vsmall = 0.00001
             vmin = min(scores.values())
             for key in scores:
                 score = scores[key]
                 scores[key] = float(vmin) / max(vsmall, score)
         else:
             vmax = max(scores.values())
+            if vmax == 0: vmax = vsmall
             for key in scores:
                 score = scores[key]
                 scores[key] = score / vmax
 
 
-def getTopFive(result, totscore):
+def getTopFive(result):
         # Sort list from top down highest score
     sortedList = []
     for score in result[:5]:
-        p = score.page
         sortedList.append({
-            'link': p.link,
+            'link': score.link,
             'score': score.score,
-            'location': totscore.location[p.link] * 0.8,
-            'frequency': totscore.content[p.link],
-            'pageRank': totscore.pageRank[p.link] * 0.5
+            'location': score.location,
+            'frequency': score.content,
+            'pageRank': score.pageRank
         })
 
     test = sortedList[:5]

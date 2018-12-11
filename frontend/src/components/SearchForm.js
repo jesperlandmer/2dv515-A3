@@ -17,10 +17,22 @@ class SearchForm extends Component {
 
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this._handleKeyPress = this._handleKeyPress.bind(this);
     }
 
     handleChange(e) {
         this.setState({ value: e.target.value });
+    }
+
+    _handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            const { value } = this.state
+            const { dispatch } = this.props;
+            
+            if (value !== '') {
+                dispatch(search(value));
+            }
+        }
     }
 
     handleSubmit(e) {
@@ -35,7 +47,7 @@ class SearchForm extends Component {
   render() {
       const { loading } = this.props;
     return (
-        <form style={{ 'margin-top': '50px'}}>
+        <div style={{ 'margin-top': '50px'}}>
         <FormGroup
           controlId="formBasicText"
         >
@@ -44,14 +56,20 @@ class SearchForm extends Component {
             value={this.state.value}
             placeholder="Enter text"
             onChange={this.handleChange}
+            onKeyPress={this._handleKeyPress}
           />
           <FormControl.Feedback />
         </FormGroup>
 
-        <Button bsStyle="primary" type="button" onClick={this.handleSubmit} disabled={loading}>
+        <Button 
+            bsStyle="primary" 
+            type="button" 
+            onClick={this.handleSubmit}
+            disabled={loading}
+        >
             {loading ? 'Loading...' : 'Search'}
         </Button>
-    </form>
+    </div>
     );
   }
 }
