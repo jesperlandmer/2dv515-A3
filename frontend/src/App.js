@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
 import SearchForm from './components/SearchForm';
-import RecommendationResult from './components/RecommendationResult';
+import SearchResult from './components/SearchResult';
 import logo from './assets/img/logo.svg';
 
 class App extends Component {
@@ -19,7 +19,7 @@ class App extends Component {
           <SearchForm />
         </p>
 
-        <RecommendationResult />
+        <SearchResult />
       </div>
     );
   }

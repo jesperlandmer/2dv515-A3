@@ -10,9 +10,9 @@ services:
             CONFIG_FILE: 'nginx.conf'
     networks:
         - searchnet
-    depends_on:
+    # depends_on:
         # - rest
-        - frontend
+        # - frontend
     ports:
         - '8000:80'
 
@@ -24,8 +24,7 @@ services:
     networks:
       - searchnet
     volumes:
-      - ./frontend/:/app/
-      - server:/code/
+      - ./server:/code/
     
   frontend:
     image: search_frontend

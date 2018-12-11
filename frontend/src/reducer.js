@@ -1,7 +1,7 @@
 import { combineReducers } from 'redux';
 
-import recommendations from './reducers/recommendations';
+import search from './reducers/search';
 
 export default combineReducers({
-  recommendations
+  search
 });

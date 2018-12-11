@@ -1,6 +1,4 @@
 import sqlite3
-conn = sqlite3.connect('page.db')
-c = conn.cursor()
 
 class page:
     def __init__(self, link, links=[], wordlocations={}, pageRank=1.0):
@@ -13,8 +11,11 @@ class page:
         return url in self.links
 
 class db:
-    def __init__(self, db='page.db'):
-        self.conn = sqlite3.connect('page.db')
+    def __init__(self, conn=sqlite3.connect('page.db', check_same_thread=False), db='page.db'):
+        self.conn = conn
+        self.cursor = self.conn.cursor()
+        
+    def start(self):
         self.cursor = self.conn.cursor()
 
     def begin(self):
@@ -59,15 +60,15 @@ class db:
         self.cursor.execute('UPDATE pages SET pr_score = ? WHERE url = ?', (page.pageRank,page.link))
 
     def saveWord(self, wordid, word):
-        self.cursor.execute('INSERT INTO words (wordid, word) VALUES (?, ?);', (wordid, word))
+        self.cursor.execute('INSERT INTO words (wordid, word) VALUES (?, ?)', (wordid, word))
 
     def savePage(self, page):
         url = page.link
-        self.cursor.execute(f"INSERT INTO pages (url) VALUES ('{url}');")
+        self.cursor.execute('INSERT INTO pages (url) VALUES (?)', (url))
 
     def saveLocation(self, page, wordid, location):
         url = page.link
-        self.cursor.execute(f"INSERT INTO wordlocation (url, wordid, location) VALUES (?, ?, ?)", (url, wordid, location))
+        self.cursor.execute('INSERT INTO wordlocation (url, wordid, location) VALUES (?, ?, ?)', (url, wordid, location))
 
     def commit(self):
         self.cursor.execute('COMMIT') 

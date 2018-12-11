@@ -35,8 +35,7 @@ class searchEngine:
         for page in (sorted(result.values(), key=operator.attrgetter('score'), reverse=True)):
             sortedList.append(page)
 
-        # Return top 5
-        return sortedList[:5]
+        return sortedList, totscore
 
     def getIdForWord(self, word):
         wordid = self.db.getWordId(word)
@@ -71,4 +70,19 @@ class searchEngine:
                 score = scores[key]
                 scores[key] = score / vmax
 
-print(searchEngine().searchQuery('nintendo'))
+
+def getTopFive(result, totscore):
+        # Sort list from top down highest score
+    sortedList = []
+    for score in result[:5]:
+        p = score.page
+        sortedList.append({
+            'link': p.link,
+            'score': score.score,
+            'location': totscore.location[p.link] * 0.8,
+            'frequency': totscore.content[p.link],
+            'pageRank': totscore.pageRank[p.link] * 0.5
+        })
+
+    test = sortedList[:5]
+    return sortedList

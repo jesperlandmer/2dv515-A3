@@ -1,8 +1,11 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { FormGroup, FormControl, ControlLabel, Button } from 'react-bootstrap';
-import { USER_BASED_EUCLIDEAN, USER_BASED_PEARSON, ITEM_BASED_EUCLIDEAN } from '../constants/actionTypes';
-import { fetchUserBasedRec, fetchItemBasedRec } from '../actions/recommendations';
+import { FormGroup, FormControl, Button } from 'react-bootstrap';
+import { search } from '../actions/searchengine';
+
+const mapStateToProps = state => ({
+    loading: state.search.fetching,
+  })
 
 class SearchForm extends Component {
 
@@ -21,22 +24,16 @@ class SearchForm extends Component {
     }
 
     handleSubmit(e) {
-        const { user, dispatch } = this.props;
+        const { value } = this.state
+        const { dispatch } = this.props;
         
-        if (this.state.collMethod === 'user-based') {
-            if (this.state.algorithm === 'euclidean') {
-                dispatch(fetchUserBasedRec(user, USER_BASED_EUCLIDEAN));
-            } else if (this.state.algorithm === 'pearson') {
-                dispatch(fetchUserBasedRec(user, USER_BASED_PEARSON));
-            }
-        } else if (this.state.collMethod === 'item-based') {
-            if (this.state.algorithm === 'euclidean') {
-                dispatch(fetchItemBasedRec(user, ITEM_BASED_EUCLIDEAN));
-            }
+        if (value !== '') {
+            dispatch(search(value));
         }
     }
 
   render() {
+      const { loading } = this.props;
     return (
         <form style={{ 'margin-top': '50px'}}>
         <FormGroup
@@ -51,10 +48,12 @@ class SearchForm extends Component {
           <FormControl.Feedback />
         </FormGroup>
 
-        <Button bsStyle="primary" type="button" onClick={this.handleSubmit}>Search</Button>
+        <Button bsStyle="primary" type="button" onClick={this.handleSubmit} disabled={loading}>
+            {loading ? 'Loading...' : 'Search'}
+        </Button>
     </form>
     );
   }
 }
 
-export default connect()(SearchForm);
+export default connect(mapStateToProps)(SearchForm);
