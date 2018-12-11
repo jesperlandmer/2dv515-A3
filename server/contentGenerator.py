@@ -157,5 +157,5 @@ class crawler:
 #     else:
 #         return False
 
-# crawler().indexPages(dirs=['wikipedia/Words/Games','wikipedia/Words/Programming'])
+crawler().indexPages(dirs=['wikipedia/Words/Games','wikipedia/Words/Programming'])
 crawler().updatePagesWithPageRank(dirs=['wikipedia/Links/Games','wikipedia/Links/Programming'])
