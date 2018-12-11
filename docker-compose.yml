@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  proxy:
+    image: search_proxy
+    restart: unless-stopped
+    build:
+        context: ./nginx/
+        args:
+            CONFIG_FILE: 'nginx.conf'
+    networks:
+        - searchnet
+    # depends_on:
+        # - rest
+        # - frontend
+    ports:
+        - '8000:80'
+
+  rest:
+    image: search_rest
+    restart: unless-stopped
+    build:
+      context: ./server/
+    networks:
+      - searchnet
+    volumes:
+      - ./server:/code/
+    
+  frontend:
+    image: search_frontend
+    restart: unless-stopped
+    build:
+      context: ./frontend/
+    networks:
+      - searchnet
+    # depends_on:
+    #   - rest
+    volumes:
+      - ./frontend/:/app/
+      - node_modules_frontend:/app/node_modules
+
+volumes:
+  server:
+  node_modules_frontend:
+
+networks:
+  searchnet:
+    driver: bridge
