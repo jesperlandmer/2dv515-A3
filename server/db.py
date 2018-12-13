@@ -85,6 +85,7 @@ class db:
             c.execute('DROP TABLE location_score')
 
         merged = combineDicts(locationscores)
+        merged = mergeLocations([merged])
         return merged
 
     def updatePageRank(self, page):
@@ -106,6 +107,22 @@ class db:
 
     def closeDb(self):
         self.conn.close()
+
+# Getting the min values
+def mergeLocations(dicts):
+    temp = {}
+    for d in dicts:
+        if not temp:
+            temp = d
+        else:
+            for v in d:
+                if (temp[v] > d[v]):
+                    temp[v] = d[v]
+
+    # Add +1 to score to avoid zero
+    for i in temp:
+        temp[i] += 1
+    return temp
 
 # Combining the scores
 def combineDicts(dicts):
